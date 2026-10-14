@@ -6,49 +6,63 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CurrentWeather } from "@/components/current-weather";
 import { Forecast } from "@/components/forecast";
 import { SearchForm } from "@/components/search-form";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { Unit } from "@/lib/units";
 import { getWeather, searchCity, type Weather } from "@/lib/weather";
 
 const CITY_KEY = "skycast:city";
 const UNIT_KEY = "skycast:unit";
+const DEFAULT_CITY = "London";
+
+async function fetchWeatherForCity(city: string): Promise<Weather> {
+  const place = await searchCity(city);
+  return getWeather(place);
+}
+
+function errorMessage(err: unknown) {
+  return err instanceof Error ? err.message : "Something went wrong";
+}
 
 export function WeatherApp() {
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // the first load starts right away
   const [error, setError] = useState<string | null>(null);
-  const [unit, setUnit] = useState<Unit>(() => {
-    const savedUnit = localStorage.getItem(UNIT_KEY);
-    return savedUnit === "C" || savedUnit === "F" ? savedUnit : "C";
- });
+  const [storedUnit, setStoredUnit] = useLocalStorage(UNIT_KEY, "C");
+  const unit: Unit = storedUnit === "F" ? "F" : "C";
 
-  const load = useCallback(async (city: string) => {
+  // Used when the user searches
+  const search = useCallback(async (city: string) => {
     setLoading(true);
     setError(null);
     try {
-      const place = await searchCity(city);
-      setWeather(await getWeather(place));
+      setWeather(await fetchWeatherForCity(city));
       localStorage.setItem(CITY_KEY, city);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Initial load: setState only happens in async callbacks, never synchronously
   useEffect(() => {
-    const city = localStorage.getItem(CITY_KEY) ?? "London";
+    let cancelled = false;
 
-    const timeoutId = setTimeout(() => {
-        load(city);
-    }, 0);
+    fetchWeatherForCity(localStorage.getItem(CITY_KEY) ?? DEFAULT_CITY)
+      .then((data) => {
+        if (!cancelled) setWeather(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(errorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-    return () => clearTimeout(timeoutId);
-  }, [load]);
-
-  function changeUnit(next: Unit) {
-    setUnit(next);
-    localStorage.setItem(UNIT_KEY, next);
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="mx-auto w-full min-w-90 max-w-105 space-y-3 p-4">
@@ -60,7 +74,7 @@ export function WeatherApp() {
               key={u}
               size="sm"
               variant={unit === u ? "default" : "outline"}
-              onClick={() => changeUnit(u)}
+              onClick={() => setStoredUnit(u)}
             >
               °{u}
             </Button>
@@ -68,7 +82,7 @@ export function WeatherApp() {
         </div>
       </header>
 
-      <SearchForm onSearch={load} loading={loading} />
+      <SearchForm onSearch={search} loading={loading} />
 
       {error && (
         <p role="alert" className="text-sm text-destructive">

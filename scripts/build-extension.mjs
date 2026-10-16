@@ -4,7 +4,10 @@ import path from "node:path";
 const SRC = "out";
 const DEST = "extension";
 
-fs.rmSync(DEST, { recursive: true, force: true });
+fs.mkdirSync(DEST, { recursive: true });
+for (const entry of fs.readdirSync(DEST)) {
+  fs.rmSync(path.join(DEST, entry), { recursive: true, force: true });
+}
 fs.cpSync(SRC, DEST, { recursive: true });
 
 // 1. Chrome reserves top-level names starting with "_"

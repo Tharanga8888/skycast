@@ -11,7 +11,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Chrome-Manifest_V3-4285F4?logo=googlechrome&logoColor=white)
 
-[**Live demo**](https://skycast.vercel.app) · [**Download the extension**](https://github.com/Tharanga8888/skycast-weather/releases/latest) · [**Report a bug**](https://github.com/Tharanga8888/skycast-weather/issues)
+[**Live demo**](https://skycast-amber-six.vercel.app) · [**Download the extension**](https://github.com/Tharanga8888/skycast-weather/releases/latest) · [**Report a bug**](https://github.com/Tharanga8888/skycast-weather/issues)
 
 <br />
 
